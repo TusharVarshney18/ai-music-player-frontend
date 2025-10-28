@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Play, Heart, Plus, ArrowLeft } from "lucide-react";
-import { apiFetch } from "/app/api/utils/route";
+import { apiFetch } from "/app/utils/route";
 import AddToPlaylistModal from "../../components/playlists/AddToPlaylistModal";
 import CreatePlaylistModal from "../../components/playlists/CreatePlaylistModal";
 import { useRouter } from "next/navigation";

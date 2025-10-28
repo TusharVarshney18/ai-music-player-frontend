@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { apiFetch } from "../api/utils/route";
+import { apiFetch } from "../utils/route";
 
 export default function LoginPage({ onLogin }) {
   const [username, setUsername] = useState("");

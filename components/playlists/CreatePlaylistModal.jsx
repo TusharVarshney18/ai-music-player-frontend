@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { apiFetch } from "@/app/api/utils/route";
+import { apiFetch } from "@/app/utils/route";
 
 export default function CreatePlaylistModal({ onClose, onCreated }) {
   const [name, setName] = useState("");

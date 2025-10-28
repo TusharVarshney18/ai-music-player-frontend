@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { apiFetch } from "@/app/api/utils/route";
+import { apiFetch } from "@/api/utils/route";
 
 export default function DeletePlaylistModal({
   playlistId,

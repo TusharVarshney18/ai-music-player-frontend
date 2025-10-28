@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { apiFetch } from "../api/utils/route";
+import { apiFetch } from "../utils/route";
 
 export default function AvatarSection({ user, setUser }) {
   const [preview, setPreview] = useState(null);

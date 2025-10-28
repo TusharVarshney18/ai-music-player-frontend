@@ -8,7 +8,7 @@ import ChatBot from "../components/ChatBot";
 import DemoAlert from "../components/Alert";
 import LoginPage from "./login/page";
 import AlbumList from "../components/AlbumList";
-import { apiFetch } from "./api/utils/route";
+import { apiFetch } from "./utils/route";
 import { usePlayer } from "@/context/PlayerContext";
 import LikedSongsPage from "@/app/liked/page";
 

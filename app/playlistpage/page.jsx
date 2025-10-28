@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { apiFetch } from "../api/utils/route";
+import { apiFetch } from "../utils/route";
 import DeletePlaylistModal from "../../components/playlists/DeleteToPlaylist";
 import CreatePlaylistModal from "@/components/playlists/CreatePlaylistModal";
 import { usePlayer } from "@/context/PlayerContext";
