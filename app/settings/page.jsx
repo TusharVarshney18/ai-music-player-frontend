@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../api/utils/route";
 import AvatarSection from "./AvatarSection";
-import LogoutButton from "./logoutButton";
+import LogoutButton from "./LogoutButton";
 import { ArrowLeft } from "lucide-react";
 
 export default function SettingsPage() {
