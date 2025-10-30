@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Play, Heart, Plus, ArrowLeft } from "lucide-react";
-import { apiFetch } from "/app/utils/route";
 import AddToPlaylistModal from "../../components/playlists/AddToPlaylistModal";
 import CreatePlaylistModal from "../../components/playlists/CreatePlaylistModal";
 import { useRouter } from "next/navigation";
 import { usePlayer } from "@/context/PlayerContext";
+import { apiFetch } from "@/utils/route";
 
 export default function Playlist() {
   const [tracks, setTracks] = useState([]);
@@ -86,20 +86,13 @@ export default function Playlist() {
         </button>
         <div className="flex flex-col text-center md:text-left flex-1">
           <p className="text-xs md:text-sm text-gray-400 uppercase">Library</p>
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white">
-            All Songs
-          </h1>
-          <p className="text-gray-400 text-xs md:text-sm mt-1">
-            {tracks.length} songs
-          </p>
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white">All Songs</h1>
+          <p className="text-gray-400 text-xs md:text-sm mt-1">{tracks.length} songs</p>
         </div>
       </div>
 
       {/* Songs List */}
-      <ul
-        ref={listRef}
-        className="flex-1 overflow-y-auto custom-scrollbar space-y-2 md:space-y-3 min-h-[300px] md:min-h-[400px] pr-1 md:pr-2"
-      >
+      <ul ref={listRef} className="flex-1 overflow-y-auto custom-scrollbar space-y-2 md:space-y-3 min-h-[300px] md:min-h-[400px] pr-1 md:pr-2">
         {tracks.slice(0, visible).map((track, idx) => {
           const liked = isTrackLiked(track._id);
 
@@ -109,16 +102,10 @@ export default function Playlist() {
               onClick={() => playTrack(track)}
               className="grid grid-cols-[24px_1fr_auto_auto_auto] sm:grid-cols-[30px_1fr_auto_auto_auto] items-center gap-2 sm:gap-4 p-2 sm:p-3 cursor-pointer rounded-lg hover:bg-gray-800 transition"
             >
-              <span className="text-xs sm:text-sm text-gray-400 text-center">
-                {idx + 1}
-              </span>
+              <span className="text-xs sm:text-sm text-gray-400 text-center">{idx + 1}</span>
               <div className="truncate">
-                <h3 className="text-xs sm:text-sm font-semibold text-white truncate">
-                  {track.title}
-                </h3>
-                <p className="text-[10px] sm:text-xs text-gray-400 truncate">
-                  {track.artist}
-                </p>
+                <h3 className="text-xs sm:text-sm font-semibold text-white truncate">{track.title}</h3>
+                <p className="text-[10px] sm:text-xs text-gray-400 truncate">{track.artist}</p>
               </div>
 
               <button
@@ -137,9 +124,7 @@ export default function Playlist() {
                   e.stopPropagation();
                   toggleLike(track);
                 }}
-                className={`hover:text-pink-300 ${
-                  liked ? "text-pink-500" : "text-pink-400"
-                }`}
+                className={`hover:text-pink-300 ${liked ? "text-pink-500" : "text-pink-400"}`}
                 aria-label="Like"
               >
                 <Heart size={20} fill={liked ? "currentColor" : "none"} />

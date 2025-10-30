@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { apiFetch } from "../utils/route";
+import { apiFetch } from "@/utils/route";
 
 export default function AvatarSection({ user, setUser }) {
   const [preview, setPreview] = useState(null);
@@ -78,31 +78,18 @@ export default function AvatarSection({ user, setUser }) {
           className="w-28 h-28 rounded-full border-4 border-gray-700 object-cover shadow-lg"
         />
         <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-          <button
-            onClick={() => fileInputRef.current.click()}
-            className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-500 rounded-lg"
-          >
+          <button onClick={() => fileInputRef.current.click()} className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-500 rounded-lg">
             Change
           </button>
         </div>
       </div>
 
       {/* Hidden File Input */}
-      <input
-        type="file"
-        name="avatar"
-        accept="image/*"
-        ref={fileInputRef}
-        className="hidden"
-        onChange={handleAvatarUpload}
-      />
+      <input type="file" name="avatar" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleAvatarUpload} />
 
       {/* Remove Avatar */}
       {user?.avatarUrl && (
-        <button
-          onClick={handleRemoveAvatar}
-          className="text-sm text-red-500 hover:underline"
-        >
+        <button onClick={handleRemoveAvatar} className="text-sm text-red-500 hover:underline">
           Remove Avatar
         </button>
       )}

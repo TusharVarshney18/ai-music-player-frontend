@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "../utils/route";
+import { apiFetch } from "@/utils/route";
 import AvatarSection from "./AvatarSection";
 import LogoutButton from "./LogoutButton";
 import { ArrowLeft } from "lucide-react";
@@ -80,11 +80,7 @@ export default function SettingsPage() {
   }
 
   if (!user) {
-    return (
-      <p className="text-center text-gray-400 mt-20 text-sm sm:text-base">
-        Please log in to continue.
-      </p>
-    );
+    return <p className="text-center text-gray-400 mt-20 text-sm sm:text-base">Please log in to continue.</p>;
   }
 
   return (
@@ -106,15 +102,11 @@ export default function SettingsPage() {
 
         {/* Profile Section */}
         <section className="bg-gray-800/60 rounded-2xl p-6 border border-gray-700 shadow-lg backdrop-blur-md">
-          <h2 className="text-lg font-semibold mb-4 text-purple-300">
-            Profile
-          </h2>
+          <h2 className="text-lg font-semibold mb-4 text-purple-300">Profile</h2>
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <AvatarSection user={user} setUser={setUser} />
             <div className="text-center sm:text-left">
-              <p className="text-base font-medium text-white">
-                {user.username}
-              </p>
+              <p className="text-base font-medium text-white">{user.username}</p>
               <p className="text-sm text-gray-400">{user.email}</p>
             </div>
           </div>
@@ -122,9 +114,7 @@ export default function SettingsPage() {
 
         {/* Account Section */}
         <section className="bg-gray-800/60 rounded-2xl p-6 border border-gray-700 shadow-lg backdrop-blur-md">
-          <h2 className="text-lg font-semibold mb-4 text-purple-300">
-            Account
-          </h2>
+          <h2 className="text-lg font-semibold mb-4 text-purple-300">Account</h2>
           <ul className="space-y-3 text-sm">
             <li className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-gray-700 pb-3">
               <span className="text-gray-300">Email</span>
@@ -139,14 +129,10 @@ export default function SettingsPage() {
 
         {/* Change Password Section */}
         <section className="bg-gray-800/60 rounded-2xl p-6 border border-gray-700 shadow-lg backdrop-blur-md">
-          <h2 className="text-lg font-semibold mb-4 text-purple-300">
-            Change Password
-          </h2>
+          <h2 className="text-lg font-semibold mb-4 text-purple-300">Change Password</h2>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div>
-              <label className="block text-sm mb-1 text-gray-300">
-                Old Password
-              </label>
+              <label className="block text-sm mb-1 text-gray-300">Old Password</label>
               <input
                 type="password"
                 className="w-full p-2 rounded bg-gray-900/70 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-100"
@@ -156,9 +142,7 @@ export default function SettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm mb-1 text-gray-300">
-                New Password
-              </label>
+              <label className="block text-sm mb-1 text-gray-300">New Password</label>
               <input
                 type="password"
                 className="w-full p-2 rounded bg-gray-900/70 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-100"
@@ -169,9 +153,7 @@ export default function SettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm mb-1 text-gray-300">
-                Confirm New Password
-              </label>
+              <label className="block text-sm mb-1 text-gray-300">Confirm New Password</label>
               <input
                 type="password"
                 className="w-full p-2 rounded bg-gray-900/70 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-100"
@@ -182,15 +164,7 @@ export default function SettingsPage() {
               />
             </div>
 
-            {message && (
-              <p
-                className={`text-sm ${
-                  message.type === "success" ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {message.text}
-              </p>
-            )}
+            {message && <p className={`text-sm ${message.type === "success" ? "text-green-400" : "text-red-400"}`}>{message.text}</p>}
 
             <button
               type="submit"
