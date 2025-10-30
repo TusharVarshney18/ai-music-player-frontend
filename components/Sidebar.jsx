@@ -1,16 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 
-import {
-  Library,
-  Heart,
-  Plus,
-  Bot,
-  ListMusic,
-  Music2Icon,
-  Music3Icon,
-  Gamepad,
-} from "lucide-react";
+import { Library, Heart, Plus, Bot, ListMusic, Music2Icon, Music3Icon, Gamepad } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Sidebar({ activeTab, onTabChange }) {
@@ -158,9 +149,7 @@ export default function Sidebar({ activeTab, onTabChange }) {
               onClick={() => changeTab(btn.key)}
               whileTap={{ scale: 0.9 }}
               className={`relative flex flex-col items-center justify-center flex-1 transition-all duration-300 ${
-                isActive
-                  ? "text-purple-400"
-                  : "text-gray-400 hover:text-purple-300"
+                isActive ? "text-purple-400" : "text-gray-400 hover:text-purple-300"
               }`}
             >
               <motion.div
@@ -176,13 +165,7 @@ export default function Sidebar({ activeTab, onTabChange }) {
                   />
                 )}
               </motion.div>
-              <span
-                className={`text-[10px] mt-1 font-medium ${
-                  isActive ? "text-purple-400" : "text-gray-400"
-                }`}
-              >
-                {btn.mobileLabel}
-              </span>
+              <span className={`text-[10px] mt-1 font-medium ${isActive ? "text-purple-400" : "text-gray-400"}`}>{btn.mobileLabel}</span>
             </motion.button>
           );
         })}

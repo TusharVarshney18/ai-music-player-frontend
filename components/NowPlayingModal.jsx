@@ -6,29 +6,19 @@ import { X, Play, Pause, SkipBack, SkipForward } from "lucide-react";
 
 export default function NowPlayingModal({ onClose }) {
   // ✅ Get everything from PlayerContext
-  const {
-    currentTrack,
-    isPlaying,
-    progress,
-    duration,
-    togglePlay,
-    nextTrack,
-    prevTrack,
-    seek,
-  } = usePlayer();
+  const { currentTrack, isPlaying, progress, duration, togglePlay, nextTrack, prevTrack, seek } = usePlayer();
 
   if (!currentTrack) return null;
 
   // ✅ Default cover logic
   const getDefaultCover = (lang = "") => {
     lang = lang.toLowerCase();
-    if (lang.includes("hindi")) return "/covers/hindi.jpg";
-    if (lang.includes("punjabi")) return "/covers/punjabi.jpg";
-    return "/covers/english.jpg";
+    if (lang.includes("hindi")) return "/covers/default-hindi.jpg";
+    if (lang.includes("punjabi")) return "/covers/default-punjabi.jpg";
+    return "/covers/default-english.jpg";
   };
 
-  const coverSrc =
-    currentTrack.cover || getDefaultCover(currentTrack.language || "");
+  const coverSrc = currentTrack.cover || getDefaultCover(currentTrack.language || "");
 
   // ⏱ Format time
   const formatTime = (sec) => {
@@ -56,14 +46,8 @@ export default function NowPlayingModal({ onClose }) {
 
       {/* Track Info */}
       <div className="flex flex-col items-center gap-4">
-        <img
-          src={coverSrc}
-          alt="cover"
-          className="w-72 h-72 rounded-2xl shadow-xl object-cover"
-        />
-        <h1 className="text-2xl font-semibold text-center">
-          {currentTrack.title}
-        </h1>
+        <img src={coverSrc} alt="cover" className="w-72 h-72 rounded-2xl shadow-xl object-cover" />
+        <h1 className="text-2xl font-semibold text-center">{currentTrack.title}</h1>
         <p className="text-gray-400 text-center">{currentTrack.artist}</p>
       </div>
 
@@ -94,11 +78,7 @@ export default function NowPlayingModal({ onClose }) {
 
       {/* Controls */}
       <div className="flex items-center justify-center gap-8 mt-8 mb-4">
-        <motion.button
-          onClick={prevTrack}
-          whileHover={{ scale: 1.1 }}
-          className="text-purple-300"
-        >
+        <motion.button onClick={prevTrack} whileHover={{ scale: 1.1 }} className="text-purple-300">
           <SkipBack size={32} />
         </motion.button>
 
@@ -108,11 +88,7 @@ export default function NowPlayingModal({ onClose }) {
           className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-fuchsia-600 
                      flex items-center justify-center shadow-lg relative"
         >
-          {isPlaying ? (
-            <Pause size={36} className="text-white" />
-          ) : (
-            <Play size={36} className="text-white" />
-          )}
+          {isPlaying ? <Pause size={36} className="text-white" /> : <Play size={36} className="text-white" />}
           {isPlaying && (
             <motion.span
               className="absolute inset-0 rounded-full bg-purple-500 blur-md opacity-30"
@@ -126,11 +102,7 @@ export default function NowPlayingModal({ onClose }) {
           )}
         </motion.button>
 
-        <motion.button
-          onClick={nextTrack}
-          whileHover={{ scale: 1.1 }}
-          className="text-purple-300"
-        >
+        <motion.button onClick={nextTrack} whileHover={{ scale: 1.1 }} className="text-purple-300">
           <SkipForward size={32} />
         </motion.button>
       </div>
