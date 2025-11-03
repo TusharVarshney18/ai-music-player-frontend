@@ -130,7 +130,6 @@ export default function AlbumList({ onSelectTrack }) {
   }, []);
 
   const handleSelectTrack = (track) => {
-    if (!track?.url) return console.warn("No playable URL for track:", track);
     if (typeof onSelectTrack === "function") onSelectTrack(track);
   };
 
