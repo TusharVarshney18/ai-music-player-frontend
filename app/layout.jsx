@@ -2,7 +2,7 @@
 import "./globals.css";
 
 import { PlayerProvider, usePlayer } from "@/context/PlayerContext";
-import PlayerController from "@/components/PlayerControls";
+import PlayerControls from "@/components/PlayerControls";
 
 export default function RootLayout({ children }) {
   return (
@@ -19,13 +19,8 @@ export default function RootLayout({ children }) {
 
 // 👇 Global player instance (uses global player context)
 function PlayerControllerGlobal() {
-  const { currentTrack, playNext, playPrev } = usePlayer();
+  const { currentTrack, nextTrack, prevTrack } = usePlayer();
 
-  return currentTrack ? (
-    <PlayerController
-      currentTrack={currentTrack}
-      onNext={playNext}
-      onPrev={playPrev}
-    />
-  ) : null;
+  // Only show player when a track is playing
+  return currentTrack ? <PlayerControls /> : null;
 }

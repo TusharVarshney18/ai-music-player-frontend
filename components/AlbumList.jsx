@@ -25,13 +25,7 @@ function TrackCard({ track, onSelect }) {
       onClick={() => onSelect(track)}
     >
       <div className="relative w-full h-48 rounded-md overflow-hidden">
-        <Image
-          src={cover}
-          alt={track.title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 33vw"
-        />
+        <Image src={cover} alt={track.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
       </div>
       <div className="mt-1 text-center w-full">
         <h4 className="text-xs font-semibold truncate">{track.title}</h4>
@@ -61,19 +55,11 @@ function AlbumCard({ album, onClick }) {
       onClick={onClick}
     >
       <div className="relative w-full h-44">
-        <Image
-          src={albumCover}
-          alt={album.name}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 33vw"
-        />
+        <Image src={albumCover} alt={album.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
       </div>
       <div className="p-4">
         <h2 className="text-base font-bold truncate">{album.name}</h2>
-        <p className="mt-1 text-gray-400 text-xs">
-          {album.tracks.length} songs
-        </p>
+        <p className="mt-1 text-gray-400 text-xs">{album.tracks.length} songs</p>
       </div>
     </motion.div>
   );
@@ -88,20 +74,13 @@ function TrackList({ tracks, onSelect }) {
     <>
       <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
         {visibleTracks.map((track) => (
-          <TrackCard
-            key={track._id || track.title}
-            track={track}
-            onSelect={onSelect}
-          />
+          <TrackCard key={track._id || track.title} track={track} onSelect={onSelect} />
         ))}
       </div>
 
       {visibleCount < tracks.length && (
         <div className="flex justify-center mt-4">
-          <button
-            onClick={() => setVisibleCount((c) => c + 10)}
-            className="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition"
-          >
+          <button onClick={() => setVisibleCount((c) => c + 10)} className="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition">
             Load More Songs ({tracks.length - visibleCount} left)
           </button>
         </div>
@@ -120,9 +99,7 @@ export default function AlbumList({ onSelectTrack }) {
   useEffect(() => {
     async function fetchSongs() {
       try {
-        const res = await fetch(
-          `https://ai-music-player-backend.vercel.app/api/music`
-        );
+        const res = await fetch(`https://ai-music-player-backend.vercel.app/api/music`);
         if (!res.ok) throw new Error("Failed to fetch songs");
 
         const data = await res.json();
@@ -157,12 +134,7 @@ export default function AlbumList({ onSelectTrack }) {
     if (typeof onSelectTrack === "function") onSelectTrack(track);
   };
 
-  if (loading)
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-400">
-        Loading albums...
-      </div>
-    );
+  if (loading) return <div className="flex items-center justify-center h-screen text-gray-400">Loading albums...</div>;
 
   const displayedAlbums = albums.slice(0, visibleAlbums);
 
@@ -173,32 +145,15 @@ export default function AlbumList({ onSelectTrack }) {
       {/* 💿 Album Grid */}
       <div className="hidden sm:grid sm:grid-cols-2 md:grid-cols-3 gap-8 mb-12">
         {displayedAlbums.map((album) => (
-          <AlbumCard
-            key={album.id}
-            album={album}
-            onClick={() =>
-              setExpandedAlbum((prev) => (prev === album.id ? null : album.id))
-            }
-          />
+          <AlbumCard key={album.id} album={album} onClick={() => setExpandedAlbum((prev) => (prev === album.id ? null : album.id))} />
         ))}
       </div>
 
       {/* 📱 Mobile Carousel */}
       <div className="sm:hidden flex overflow-x-auto gap-6 px-4 pb-6 snap-x snap-mandatory scrollbar-hide">
         {displayedAlbums.map((album) => (
-          <motion.div
-            key={album.id}
-            className="snap-center flex-shrink-0 w-52"
-            whileTap={{ scale: 0.97 }}
-          >
-            <AlbumCard
-              album={album}
-              onClick={() =>
-                setExpandedAlbum((prev) =>
-                  prev === album.id ? null : album.id
-                )
-              }
-            />
+          <motion.div key={album.id} className="snap-center flex-shrink-0 w-52" whileTap={{ scale: 0.97 }}>
+            <AlbumCard album={album} onClick={() => setExpandedAlbum((prev) => (prev === album.id ? null : album.id))} />
           </motion.div>
         ))}
       </div>
@@ -206,10 +161,7 @@ export default function AlbumList({ onSelectTrack }) {
       {/* Load More Albums */}
       {visibleAlbums < albums.length && (
         <div className="flex justify-center mt-4">
-          <button
-            onClick={() => setVisibleAlbums((a) => a + 6)}
-            className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition"
-          >
+          <button onClick={() => setVisibleAlbums((a) => a + 6)} className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition">
             Load More Albums ({albums.length - visibleAlbums} left)
           </button>
         </div>
@@ -229,13 +181,8 @@ export default function AlbumList({ onSelectTrack }) {
               .filter((a) => a.id === expandedAlbum)
               .map((album) => (
                 <div key={album.id} className="mt-8 mb-20">
-                  <h2 className="text-3xl font-semibold mb-6 text-center">
-                    {album.name}
-                  </h2>
-                  <TrackList
-                    tracks={album.tracks}
-                    onSelect={handleSelectTrack}
-                  />
+                  <h2 className="text-3xl font-semibold mb-6 text-center">{album.name}</h2>
+                  <TrackList tracks={album.tracks} onSelect={handleSelectTrack} />
                 </div>
               ))}
           </motion.section>
