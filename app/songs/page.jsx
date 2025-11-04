@@ -19,9 +19,11 @@ export default function Playlist() {
   const [hoveredTrack, setHoveredTrack] = useState(null);
   const listRef = useRef(null);
   const router = useRouter();
+
+  // ✅ Access global player context
   const { playTrack, currentTrack } = usePlayer();
 
-  // 🎧 Fetch songs from backend
+  // 🎧 Fetch songs
   useEffect(() => {
     async function loadSongs() {
       try {
@@ -34,12 +36,11 @@ export default function Playlist() {
     }
     loadSongs();
 
-    // ❤️ Load liked songs from localStorage
     const storedLikes = JSON.parse(localStorage.getItem("likedTracks") || "[]");
     setLikedTracks(storedLikes);
   }, []);
 
-  // 🔥 Infinite scroll
+  // ♾ Infinite scroll
   const handleScroll = () => {
     const list = listRef.current;
     if (!list) return;
@@ -55,37 +56,33 @@ export default function Playlist() {
     return () => list?.removeEventListener("scroll", handleScroll);
   }, [tracks.length]);
 
-  // ❤️ Handle like/unlike
+  // ❤️ Toggle like
   const toggleLike = (track) => {
-    const existing = likedTracks.find((t) => t._id === track._id);
-    let updated;
-
-    if (existing) {
-      updated = likedTracks.filter((t) => t._id !== track._id);
-    } else {
-      updated = [...likedTracks, track];
-    }
-
+    const exists = likedTracks.find((t) => t._id === track._id);
+    const updated = exists ? likedTracks.filter((t) => t._id !== track._id) : [...likedTracks, track];
     setLikedTracks(updated);
     localStorage.setItem("likedTracks", JSON.stringify(updated));
   };
 
-  // 🧠 Helper to check if liked
   const isLiked = (id) => likedTracks.some((t) => t._id === id);
 
-  // 🔍 Filter tracks by search
+  // 🔍 Filtered songs
   const filteredTracks = tracks.filter(
     (track) => track.title.toLowerCase().includes(searchQuery.toLowerCase()) || track.artist.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // 🎲 Play all tracks
+  // 🎲 Play all with queue
   const playAll = () => {
     if (filteredTracks.length > 0) {
-      playTrack(filteredTracks[0]);
+      playTrack(filteredTracks[0], filteredTracks); // ✅ passes full queue
     }
   };
 
-  // ⏱️ Format duration
+  // 🧠 Individual play with queue
+  const handlePlayTrack = (track) => {
+    playTrack(track, filteredTracks); // ✅ also passes queue
+  };
+
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -94,14 +91,10 @@ export default function Playlist() {
 
   return (
     <section className="w-full max-w-full bg-gradient-to-b from-purple-900/40 via-zinc-900 to-black rounded-xl shadow-2xl flex flex-col h-full min-h-screen overflow-hidden">
-      {/* Header Section with Gradient Overlay */}
+      {/* Header */}
       <div className="relative bg-gradient-to-b from-purple-600/60 to-purple-900/30 backdrop-blur-sm px-4 sm:px-6 lg:px-8 pt-6 pb-8">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
-        </div>
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
 
-        {/* Back Button */}
         <button onClick={() => router.back()} className="relative z-10 mb-4 flex items-center gap-2 text-white/80 hover:text-white transition-all group">
           <div className="p-2 rounded-full bg-black/20 group-hover:bg-black/40 transition-all">
             <ArrowLeft size={20} />
@@ -109,14 +102,11 @@ export default function Playlist() {
           <span className="text-sm font-medium hidden sm:inline">Back</span>
         </button>
 
-        {/* Header Content */}
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-end gap-6">
-          {/* Album/Playlist Cover */}
           <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-lg shadow-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
             <Music2 size={80} className="text-white/90" strokeWidth={1.5} />
           </div>
 
-          {/* Info */}
           <div className="flex-1 flex flex-col justify-end pb-2">
             <p className="text-xs sm:text-sm text-white/70 uppercase tracking-wider font-semibold mb-2">Playlist</p>
             <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black text-white mb-4 leading-tight">All Songs</h1>
@@ -133,29 +123,25 @@ export default function Playlist() {
         </div>
       </div>
 
-      {/* Action Bar */}
+      {/* Controls + Search */}
       <div className="sticky top-0 z-20 bg-zinc-900/95 backdrop-blur-md border-b border-white/5 px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 justify-between">
-          {/* Play Controls */}
           <div className="flex items-center gap-3">
             <button
               onClick={playAll}
-              className="p-4 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full hover:scale-105 hover:from-purple-500 hover:to-pink-500 transition-all shadow-lg hover:shadow-purple-500/50 group"
+              className="p-4 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full hover:scale-105 transition-all shadow-lg hover:shadow-purple-500/50"
               aria-label="Play all"
             >
               <Play size={24} className="text-white fill-white" />
             </button>
-
-            <button className="p-3 text-gray-400 hover:text-white transition-all hover:scale-110" aria-label="Shuffle">
+            <button className="p-3 text-gray-400 hover:text-white hover:scale-110 transition-all" aria-label="Shuffle">
               <Shuffle size={28} />
             </button>
-
-            <button className="p-3 text-gray-400 hover:text-white transition-all hover:scale-110" aria-label="More options">
+            <button className="p-3 text-gray-400 hover:text-white hover:scale-110 transition-all" aria-label="More options">
               <MoreHorizontal size={28} />
             </button>
           </div>
 
-          {/* Search Bar */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
@@ -163,13 +149,13 @@ export default function Playlist() {
               placeholder="Search in playlist..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-full text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-full text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
             />
           </div>
         </div>
       </div>
 
-      {/* Table Header - Desktop Only */}
+      {/* Table Header */}
       <div className="hidden sm:grid sticky top-[88px] sm:top-[72px] z-10 grid-cols-[auto_2fr_1fr_auto_auto] gap-4 px-4 sm:px-6 lg:px-8 py-3 text-xs uppercase tracking-wider text-gray-400 border-b border-white/5 bg-zinc-900/50 backdrop-blur-sm">
         <div className="text-center">#</div>
         <div>Title</div>
@@ -191,17 +177,17 @@ export default function Playlist() {
               key={track._id || idx}
               onMouseEnter={() => setHoveredTrack(track._id)}
               onMouseLeave={() => setHoveredTrack(null)}
-              className={`grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_2fr_1fr_auto_auto] gap-3 sm:gap-4 items-center p-3 rounded-lg cursor-pointer transition-all group ${
+              className={`grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_2fr_1fr_auto_auto] gap-3 sm:gap-4 items-center p-3 rounded-lg cursor-pointer transition-all ${
                 isPlaying ? "bg-white/10" : "hover:bg-white/5"
               }`}
             >
-              {/* Index / Play Icon */}
+              {/* Play icon / index */}
               <div className="w-8 flex items-center justify-center">
                 {isHovered || isPlaying ? (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      playTrack(track);
+                      handlePlayTrack(track);
                     }}
                     className={`${isPlaying ? "text-purple-400" : "text-white"} hover:scale-110 transition-transform`}
                   >
@@ -213,7 +199,7 @@ export default function Playlist() {
               </div>
 
               {/* Title & Artist */}
-              <div onClick={() => playTrack(track)} className="flex items-center gap-3 min-w-0">
+              <div onClick={() => handlePlayTrack(track)} className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded flex items-center justify-center flex-shrink-0">
                   <Music2 size={18} className="text-purple-400" />
                 </div>
@@ -223,54 +209,40 @@ export default function Playlist() {
                 </div>
               </div>
 
-              {/* Artist (Desktop) */}
               <div className="hidden sm:block">
                 <p className="text-sm text-gray-400 truncate hover:text-white transition-colors cursor-pointer">{track.artist}</p>
               </div>
 
-              {/* Duration (Desktop) */}
               <div className="hidden sm:block text-center">
                 <span className="text-sm text-gray-400">{track.duration ? formatDuration(track.duration) : "3:24"}</span>
               </div>
 
-              {/* Actions - ALWAYS VISIBLE */}
+              {/* Actions */}
               <div className="flex items-center gap-1 sm:gap-2">
-                {/* Like Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleLike(track);
                   }}
-                  className={`p-2 sm:p-2.5 transition-all touch-manipulation ${
+                  className={`p-2 sm:p-2.5 ${
                     isLiked(track._id) ? "text-pink-500 scale-110" : "text-gray-400 hover:text-pink-400 hover:scale-110 active:scale-95"
-                  }`}
-                  aria-label="Like"
+                  } transition-all`}
                 >
-                  <Heart size={18} className="sm:w-[18px] sm:h-[18px]" fill={isLiked(track._id) ? "currentColor" : "none"} />
+                  <Heart size={18} fill={isLiked(track._id) ? "currentColor" : "none"} />
                 </button>
 
-                {/* Add to Playlist */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedSong(track);
                     setShowAddModal(true);
                   }}
-                  className="p-2 sm:p-2.5 text-gray-400 hover:text-green-400 hover:scale-110 active:scale-95 transition-all touch-manipulation"
-                  aria-label="Add to playlist"
+                  className="p-2 sm:p-2.5 text-gray-400 hover:text-green-400 hover:scale-110 active:scale-95 transition-all"
                 >
-                  <Plus size={18} className="sm:w-[18px] sm:h-[18px]" />
+                  <Plus size={18} />
                 </button>
 
-                {/* More Options (Mobile) - Optional */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Add more options functionality here
-                  }}
-                  className="p-2 text-gray-400 hover:text-white transition-all sm:hidden touch-manipulation"
-                  aria-label="More options"
-                >
+                <button className="p-2 text-gray-400 hover:text-white transition-all sm:hidden">
                   <MoreVertical size={18} />
                 </button>
               </div>
@@ -278,7 +250,6 @@ export default function Playlist() {
           );
         })}
 
-        {/* Empty State */}
         {filteredTracks.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Music2 size={64} className="text-gray-600 mb-4" />

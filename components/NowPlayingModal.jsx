@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { motion } from "framer-motion";
+
+import { useState, useEffect } from "react";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { usePlayer } from "@/context/PlayerContext";
 import { X, Play, Pause, SkipBack, SkipForward, RefreshCw, Shuffle, Heart } from "lucide-react";
 
@@ -11,19 +12,20 @@ export default function NowPlayingModal({ onClose }) {
   const [seeking, setSeeking] = useState(false);
   const [seekValue, setSeekValue] = useState(0);
 
+  // Motion value for smooth animation
+  const progressMotion = useMotionValue(0);
+  const progressPercent = useTransform(progressMotion, (v) => `${v * 100}%`);
+
+  // Smoothly animate motion value when progress updates
+  useEffect(() => {
+    if (!seeking && duration > 0) {
+      const ratio = progress / duration;
+      animate(progressMotion, ratio, { duration: 0.2, ease: "easeOut" });
+    }
+  }, [progress, duration, seeking]);
+
   if (!currentTrack) return null;
 
-  // Cover logic
-  const getDefaultCover = (lang = "") => {
-    lang = lang.toLowerCase();
-    if (lang.includes("hindi")) return "/covers/default-hindi.jpg";
-    if (lang.includes("punjabi")) return "/covers/default-punjabi.jpg";
-    return "/covers/default-english.jpg";
-  };
-
-  const coverSrc = currentTrack.cover || getDefaultCover(currentTrack.language || "");
-
-  // Format time
   const formatTime = (sec) => {
     if (!sec || isNaN(sec)) return "0:00";
     const m = Math.floor(sec / 60);
@@ -31,19 +33,20 @@ export default function NowPlayingModal({ onClose }) {
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  // Local value for bar
-  const displayProgress = seeking ? seekValue : progress;
-  const progressRatio = duration ? displayProgress / duration : 0;
-
-  // Seek UI handlers
   const handleSeekChange = (e) => {
+    const val = parseFloat(e.target.value);
     setSeeking(true);
-    setSeekValue(parseFloat(e.target.value) * duration);
+    setSeekValue(val);
+    progressMotion.set(val); // update visual instantly
   };
+
   const handleSeekCommit = (e) => {
+    const val = parseFloat(e.target.value);
     setSeeking(false);
-    seek(parseFloat(e.target.value));
+    seek(val); // ratio-based seek
   };
+
+  const displayedRatio = seeking ? seekValue : progress / duration || 0;
 
   return (
     <motion.div
@@ -63,7 +66,7 @@ export default function NowPlayingModal({ onClose }) {
 
       {/* Track Info */}
       <div className="flex flex-col items-center gap-4">
-        <img src={coverSrc} alt="cover" className="w-72 h-72 rounded-2xl shadow-xl object-cover" />
+        <img src={currentTrack.cover || "/covers/default-english.jpg"} alt="cover" className="w-72 h-72 rounded-2xl shadow-xl object-cover" />
         <h1 className="text-2xl font-semibold text-center">{currentTrack.title}</h1>
         <p className="text-gray-400 text-center">{currentTrack.artist}</p>
       </div>
@@ -71,39 +74,36 @@ export default function NowPlayingModal({ onClose }) {
       {/* Progress Bar */}
       <div className="w-full max-w-md mt-4">
         <div className="flex justify-between text-sm text-gray-400 mb-1">
-          <span>{formatTime(displayProgress)}</span>
+          <span>{formatTime(displayedRatio * duration)}</span>
           <span>{formatTime(duration)}</span>
         </div>
         <div className="relative h-2 bg-gray-700/60 rounded-full overflow-hidden group">
           <motion.div
             className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-purple-700 rounded-full"
-            style={{ width: `${progressRatio * 100}%` }}
-            animate={{ width: `${progressRatio * 100}%` }}
-            transition={{ duration: 0.15 }}
+            style={{ width: progressPercent }}
           />
           <input
             type="range"
             min={0}
             max={1}
-            step={0.01}
-            value={progressRatio}
+            step={0.001}
+            value={displayedRatio}
             onChange={handleSeekChange}
             onMouseUp={handleSeekCommit}
             onTouchEnd={handleSeekCommit}
-            onMouseLeave={() => setSeeking(false)}
-            onBlur={() => setSeeking(false)}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             aria-label="Seek"
           />
         </div>
       </div>
 
-      {/* Controls + options */}
+      {/* Controls */}
       <div className="flex flex-col gap-3 items-center mt-8 mb-4">
         <div className="flex items-center gap-8">
           <motion.button onClick={prevTrack} whileHover={{ scale: 1.1 }} className="text-purple-300" title="Previous">
             <SkipBack size={32} />
           </motion.button>
+
           <motion.button
             onClick={togglePlay}
             whileTap={{ scale: 0.9 }}
@@ -115,7 +115,10 @@ export default function NowPlayingModal({ onClose }) {
             {isPlaying && (
               <motion.span
                 className="absolute inset-0 rounded-full bg-purple-500 blur-md opacity-30"
-                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.6, 0.3],
+                }}
                 transition={{
                   duration: 1.5,
                   repeat: Infinity,
@@ -124,20 +127,24 @@ export default function NowPlayingModal({ onClose }) {
               />
             )}
           </motion.button>
+
           <motion.button onClick={nextTrack} whileHover={{ scale: 1.1 }} className="text-purple-300" title="Next">
             <SkipForward size={32} />
           </motion.button>
         </div>
-        {/* Option Buttons: Loop, Shuffle, Like */}
+
+        {/* Options */}
         <div className="flex items-center gap-6 mt-3">
-          <button title="Loop song" className={loop ? "text-fuchsia-400" : "text-gray-400 hover:text-white"} onClick={toggleLoop}>
+          <button title="Loop" className={loop ? "text-fuchsia-400" : "text-gray-400 hover:text-white"} onClick={toggleLoop}>
             <RefreshCw size={23} />
           </button>
+
           <button title="Shuffle" className={shuffle ? "text-fuchsia-400" : "text-gray-400 hover:text-white"} onClick={toggleShuffle}>
             <Shuffle size={23} />
           </button>
+
           <button
-            title="Like this song"
+            title="Like"
             className={liked?.has?.(currentTrack._id) ? "text-pink-500" : "text-gray-400 hover:text-white"}
             onClick={() => toggleLike && toggleLike(currentTrack._id)}
           >

@@ -1,4 +1,5 @@
 "use client";
+
 import { createContext, useContext, useState, useRef, useEffect } from "react";
 
 const PlayerContext = createContext();
@@ -7,66 +8,95 @@ export const usePlayer = () => useContext(PlayerContext);
 export function PlayerProvider({ children, user = null }) {
   const audioRef = useRef(null);
   const [currentTrack, setCurrentTrack] = useState(null);
-  const [lastTrackId, setLastTrackId] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [queue, setQueue] = useState([]);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const [loop, setLoop] = useState(false);
+  const [shuffle, setShuffle] = useState(false);
+  const [liked, setLiked] = useState(new Set());
+  const [activeToken, setActiveToken] = useState(null);
 
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const getAudioUrl = (track = {}) => {
-    if (!track) return "";
-    const songId = track._id || track.id;
-    if (!songId) return "";
-    return `${BASE_URL}/api/music/stream/${songId}`;
-  };
+
+  /* --------------------- Load likes from storage --------------------- */
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("likedSongs") || "[]");
+    setLiked(new Set(stored));
+  }, []);
 
   useEffect(() => {
+    localStorage.setItem("likedSongs", JSON.stringify([...liked]));
+  }, [liked]);
+
+  /* --------------------- Main playback effect --------------------- */
+  useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !currentTrack) return;
+    if (!audio || !currentTrack || !user) return;
 
-    const songId = currentTrack._id || currentTrack.id;
-    // Only reset/post new src if track actually changed
-    if (lastTrackId !== songId) {
-      const finalUrl = getAudioUrl(currentTrack);
-      audio.pause();
-      audio.src = finalUrl;
-      audio.currentTime = 0;
-      setProgress(0);
-      setIsLoading(true);
-      setLastTrackId(songId);
-    }
+    const id = currentTrack._id || currentTrack.id;
+    if (!id) return;
 
-    audio.loop = loop;
+    let abort = false;
 
-    const handleLoadedMetadata = () => {
-      setDuration(audio.duration || 0);
-      setIsLoading(false);
-      if (isPlaying) {
-        audio.play().catch(() => setIsPlaying(false));
+    // Fetch a fresh short-lived stream token
+    const fetchTokenAndPlay = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/music/stream-token/${id}`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) throw new Error("Token fetch failed");
+        const { token } = await res.json();
+        if (abort) return;
+
+        setActiveToken(token);
+        const streamUrl = `${BASE_URL}/api/music/stream/${id}?t=${encodeURIComponent(token)}`;
+
+        audio.src = streamUrl;
+        audio.crossOrigin = "use-credentials";
+        audio.load();
+
+        if (isPlaying) {
+          await audio.play().catch((err) => {
+            console.warn("Autoplay prevented:", err);
+          });
+        }
+      } catch (err) {
+        console.error("Stream token error:", err);
+        setIsPlaying(false);
       }
     };
-    const handleCanPlay = () => setIsLoading(false);
+
+    fetchTokenAndPlay();
+
+    // Handlers
+    const handleCanPlay = () => {
+      setDuration(audio.duration || 0);
+      if (isPlaying) audio.play().catch(console.warn);
+    };
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
     const handleTimeUpdate = () => setProgress(audio.currentTime || 0);
     const handleEnded = () => {
-      setIsPlaying(false);
       if (loop) {
         audio.currentTime = 0;
         audio.play();
-        return;
+      } else {
+        nextTrack();
       }
-      nextTrack();
     };
-    const handleError = () => {
-      setIsPlaying(false);
-      setIsLoading(false);
+    const handleError = (e) => {
+      console.warn("Audio error:", e);
+      // Retry once if token expired
+      if (!abort && e.target?.error?.code === e.target?.error?.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+        console.log("Retrying with new stream token...");
+        fetchTokenAndPlay();
+      } else {
+        setIsPlaying(false);
+      }
     };
 
-    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("canplay", handleCanPlay);
     audio.addEventListener("play", handlePlay);
     audio.addEventListener("pause", handlePause);
@@ -75,7 +105,7 @@ export function PlayerProvider({ children, user = null }) {
     audio.addEventListener("error", handleError);
 
     return () => {
-      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      abort = true;
       audio.removeEventListener("canplay", handleCanPlay);
       audio.removeEventListener("play", handlePlay);
       audio.removeEventListener("pause", handlePause);
@@ -83,57 +113,47 @@ export function PlayerProvider({ children, user = null }) {
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("error", handleError);
     };
-  }, [currentTrack, lastTrackId, isPlaying, loop]);
+  }, [currentTrack, isPlaying, loop, user, BASE_URL]);
 
-  // On logout, stop everything
+  /* --------------------- Stop everything on logout --------------------- */
   useEffect(() => {
-    if (!user) {
-      const audio = audioRef.current;
-      if (audio) {
-        audio.pause();
-        audio.src = "";
-      }
-      setCurrentTrack(null);
-      setQueue([]);
-      setIsPlaying(false);
-      setProgress(0);
-      setDuration(0);
-      setIsLoading(false);
-      setLastTrackId(null);
-    }
+    if (!user) stopPlayback();
   }, [user]);
 
-  // CONTROLS ---
+  /* --------------------- Controls --------------------- */
+  const playTrack = (track, newQueue = []) => {
+    if (!track) return;
+    if (newQueue.length) setQueue(newQueue);
+    setCurrentTrack(track);
+    setIsPlaying(true);
+  };
+
   const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (isPlaying) {
-      audio.pause();
-    } else {
+    if (audio.paused) {
       try {
         await audio.play();
         setIsPlaying(true);
       } catch (err) {
-        setIsPlaying(false);
+        console.error("Play error:", err);
       }
+    } else {
+      audio.pause();
     }
-  };
-
-  const playTrack = (track, newQueue = []) => {
-    if (!track) return;
-    const audio = audioRef.current;
-    if (audio) audio.pause();
-    setCurrentTrack(track);
-    if (newQueue.length) setQueue(newQueue);
-    setIsPlaying(true);
-    // DON'T touch progress/duration; those update in effect on metadata!
   };
 
   const nextTrack = () => {
     if (!queue.length || !currentTrack) return;
     const idx = queue.findIndex((t) => (t._id || t.id) === (currentTrack._id || currentTrack.id));
-    if (idx === -1) return;
-    const nextIdx = idx < queue.length - 1 ? idx + 1 : 0;
+    let nextIdx;
+    if (shuffle) {
+      do {
+        nextIdx = Math.floor(Math.random() * queue.length);
+      } while (nextIdx === idx && queue.length > 1);
+    } else {
+      nextIdx = idx < queue.length - 1 ? idx + 1 : 0;
+    }
     setCurrentTrack(queue[nextIdx]);
     setIsPlaying(true);
   };
@@ -141,58 +161,70 @@ export function PlayerProvider({ children, user = null }) {
   const prevTrack = () => {
     if (!queue.length || !currentTrack) return;
     const idx = queue.findIndex((t) => (t._id || t.id) === (currentTrack._id || currentTrack.id));
-    if (idx === -1) return;
     const prevIdx = idx > 0 ? idx - 1 : queue.length - 1;
     setCurrentTrack(queue[prevIdx]);
     setIsPlaying(true);
   };
 
-  const seek = (value) => {
+  const seek = (ratio) => {
     const audio = audioRef.current;
     if (audio && duration > 0 && audio.readyState >= 2) {
-      const newTime = Math.max(0, Math.min(duration, value * duration));
+      const newTime = ratio * duration;
       audio.currentTime = newTime;
       setProgress(newTime);
     }
   };
 
-  const toggleLoop = () => setLoop((prev) => !prev);
+  const toggleLoop = () => setLoop((p) => !p);
+  const toggleShuffle = () => setShuffle((p) => !p);
+
+  const toggleLike = (id) => {
+    setLiked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const stopPlayback = () => {
     const audio = audioRef.current;
     if (audio) {
       audio.pause();
-      audio.currentTime = 0;
       audio.src = "";
     }
     setIsPlaying(false);
     setCurrentTrack(null);
     setProgress(0);
-    setLastTrackId(null);
+    setDuration(0);
+    setActiveToken(null);
   };
 
   return (
     <PlayerContext.Provider
       value={{
         currentTrack,
+        queue,
         isPlaying,
         progress,
         duration,
-        queue,
-        isLoading,
+        loop,
+        shuffle,
+        liked,
         playTrack,
         togglePlay,
         nextTrack,
         prevTrack,
         seek,
         toggleLoop,
-        loop,
-        setIsPlaying,
+        toggleShuffle,
+        toggleLike,
         stopPlayback,
+        setIsPlaying,
       }}
     >
       {children}
-      <audio ref={audioRef} className="hidden" preload="metadata" crossOrigin="use-credentials" controlsList="nodownload noremoteplayback" />
+      <audio ref={audioRef} preload="metadata" className="hidden" controlsList="nodownload noremoteplayback" crossOrigin="use-credentials" />
     </PlayerContext.Provider>
   );
 }
