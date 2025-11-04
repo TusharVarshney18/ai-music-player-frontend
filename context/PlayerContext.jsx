@@ -15,7 +15,7 @@ export function PlayerProvider({ children, user = null }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loop, setLoop] = useState(false);
 
-  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
   const getAudioUrl = (track = {}) => {
     if (!track) return "";
     const songId = track._id || track.id;
