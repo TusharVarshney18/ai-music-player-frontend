@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useRef, useEffect } from "react";
 const PlayerContext = createContext();
 export const usePlayer = () => useContext(PlayerContext);
 
-export function PlayerProvider({ children, user = null }) {
+export function PlayerProvider({ children }) {
   const audioRef = useRef(null);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [queue, setQueue] = useState([]);
@@ -15,11 +15,8 @@ export function PlayerProvider({ children, user = null }) {
   const [loop, setLoop] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [liked, setLiked] = useState(new Set());
-  const [activeToken, setActiveToken] = useState(null);
 
-  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-  /* --------------------- Load likes from storage --------------------- */
+  /* ---------------- Load Likes ---------------- */
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("likedSongs") || "[]");
     setLiked(new Set(stored));
@@ -29,52 +26,31 @@ export function PlayerProvider({ children, user = null }) {
     localStorage.setItem("likedSongs", JSON.stringify([...liked]));
   }, [liked]);
 
-  /* --------------------- Main playback effect --------------------- */
+  /* ---------------- Main Playback Logic ---------------- */
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !currentTrack || !user) return;
+    if (!audio || !currentTrack) return;
 
-    const id = currentTrack._id || currentTrack.id;
-    if (!id) return;
+    const url = currentTrack.url;
+    if (!url) return;
 
-    let abort = false;
+    // Set source to direct Cloudinary URL
+    audio.src = url;
+    audio.crossOrigin = "anonymous"; // Cloudinary serves CORS-enabled media
+    audio.load();
 
-    // Fetch a fresh short-lived stream token
-    const fetchTokenAndPlay = async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/api/music/stream-token/${id}`, {
-          credentials: "include",
-        });
-
-        if (!res.ok) throw new Error("Token fetch failed");
-        const { token } = await res.json();
-        if (abort) return;
-
-        setActiveToken(token);
-        const streamUrl = `${BASE_URL}/api/music/stream/${id}?t=${encodeURIComponent(token)}`;
-
-        audio.src = streamUrl;
-        audio.crossOrigin = "use-credentials";
-        audio.load();
-
-        if (isPlaying) {
-          await audio.play().catch((err) => {
-            console.warn("Autoplay prevented:", err);
-          });
+    // Play when ready if state says so
+    const handleCanPlay = async () => {
+      setDuration(audio.duration || 0);
+      if (isPlaying) {
+        try {
+          await audio.play();
+        } catch (err) {
+          console.warn("Autoplay prevented:", err);
         }
-      } catch (err) {
-        console.error("Stream token error:", err);
-        setIsPlaying(false);
       }
     };
 
-    fetchTokenAndPlay();
-
-    // Handlers
-    const handleCanPlay = () => {
-      setDuration(audio.duration || 0);
-      if (isPlaying) audio.play().catch(console.warn);
-    };
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
     const handleTimeUpdate = () => setProgress(audio.currentTime || 0);
@@ -86,15 +62,10 @@ export function PlayerProvider({ children, user = null }) {
         nextTrack();
       }
     };
+
     const handleError = (e) => {
-      console.warn("Audio error:", e);
-      // Retry once if token expired
-      if (!abort && e.target?.error?.code === e.target?.error?.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-        console.log("Retrying with new stream token...");
-        fetchTokenAndPlay();
-      } else {
-        setIsPlaying(false);
-      }
+      console.error("Audio playback error:", e);
+      setIsPlaying(false);
     };
 
     audio.addEventListener("canplay", handleCanPlay);
@@ -105,7 +76,6 @@ export function PlayerProvider({ children, user = null }) {
     audio.addEventListener("error", handleError);
 
     return () => {
-      abort = true;
       audio.removeEventListener("canplay", handleCanPlay);
       audio.removeEventListener("play", handlePlay);
       audio.removeEventListener("pause", handlePause);
@@ -113,14 +83,9 @@ export function PlayerProvider({ children, user = null }) {
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("error", handleError);
     };
-  }, [currentTrack, isPlaying, loop, user, BASE_URL]);
+  }, [currentTrack, isPlaying, loop]);
 
-  /* --------------------- Stop everything on logout --------------------- */
-  useEffect(() => {
-    if (!user) stopPlayback();
-  }, [user]);
-
-  /* --------------------- Controls --------------------- */
+  /* ---------------- Controls ---------------- */
   const playTrack = (track, newQueue = []) => {
     if (!track) return;
     if (newQueue.length) setQueue(newQueue);
@@ -131,7 +96,8 @@ export function PlayerProvider({ children, user = null }) {
   const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (audio.paused) {
+
+    if (audio.paused || audio.readyState < 2) {
       try {
         await audio.play();
         setIsPlaying(true);
@@ -197,7 +163,6 @@ export function PlayerProvider({ children, user = null }) {
     setCurrentTrack(null);
     setProgress(0);
     setDuration(0);
-    setActiveToken(null);
   };
 
   return (
@@ -224,7 +189,7 @@ export function PlayerProvider({ children, user = null }) {
       }}
     >
       {children}
-      <audio ref={audioRef} preload="metadata" className="hidden" controlsList="nodownload noremoteplayback" crossOrigin="use-credentials" />
+      <audio ref={audioRef} preload="metadata" className="hidden" controlsList="nodownload noremoteplayback" crossOrigin="anonymous" />
     </PlayerContext.Provider>
   );
 }
